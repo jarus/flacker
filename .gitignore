@@ -1,0 +1,8 @@
+*.orig
+*.pyc
+*.o
+.DS_Store
+*.egg-info/
+build/
+dist/
+/config.cfg
