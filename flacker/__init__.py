@@ -19,8 +19,14 @@ from flask.ext.redis import Redis
 
 from bencode import bencode
 
-def get_info_hash(request):
-    return b2a_hex(cgi.parse_qs(request.query_string)['info_hash'][0])
+def get_info_hash(request, multiple=False):
+    if not multiple:
+        return b2a_hex(cgi.parse_qs(request.query_string)['info_hash'][0])
+    else:
+        hashes = set()
+        for hash in cgi.parse_qs(request.query_string)['info_hash']:
+            hashes.add(b2a_hex(hash))
+        return hashes
 
 def babort(message):
     return bencode({'failure reason': message})
@@ -41,8 +47,9 @@ def announce():
             return babort('missing argument (%s)' % arg)
 
     peer_id = request.args['peer_id']
-    peer_key = 'peer:%s' % request.args['peer_id']
+    peer_key = 'peer:%s' % peer_id
     info_hash = get_info_hash(request)
+    torrent_key = 'torrent:%s' % info_hash
     seed_set_key = 'torrent:%s:seed' % info_hash
     leech_set_key = 'torrent:%s:leech' % info_hash
     
@@ -54,6 +61,8 @@ def announce():
         redis.srem(leech_set_key, peer_id)
         redis.delete(peer_key)
         return bencode({})
+    elif request.args.get('event') == 'completed':
+        redis.hincrby(torrent_key, 'downloaded', 1)
     
     redis.hset(peer_key, 'ip', request.args.get('ip', request.remote_addr))
     redis.hset(peer_key, 'port', request.args.get('port', int))
@@ -105,3 +114,28 @@ def announce():
         'peers': peers
     })
 
+@app.route('/scrape')
+def scape():
+    if 'info_hash' in request.args:
+        info_hash_list = get_info_hash(request, multiple=True)
+        for info_hash in info_hash_list:
+            if not redis.sismember('torrents', info_hash):
+                info_hash_list.remove(info_hash)
+    else:
+        info_hash_list = redis.smembers('torrents')
+    
+    files = {}
+    for info_hash in info_hash_list:
+        torrent_key = 'torrent:%s' % info_hash
+        seed_set_key = 'torrent:%s:seed' % info_hash
+        leech_set_key = 'torrent:%s:leech' % info_hash
+        
+        name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
+        files[info_hash] = {
+            'name': name,
+            'downloaded': downloaded or 0,
+            'complete': redis.scard(seed_set_key) or 0,
+            'incomplete': redis.scard(leech_set_key) or 0,
+        }
+        
+    return bencode({'files': files})
