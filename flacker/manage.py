@@ -13,8 +13,8 @@ from bencode import bencode, bdecode
 from flask import current_app
 from flaskext.script import Manager, Server, Shell
 
-from flacker import create_app
-from flacker.redis import redis
+from . import create_app
+from .redis import redis
 
 def _make_context():
     return dict(app=current_app, redis=redis)
@@ -127,6 +127,8 @@ def remove_torrent(info_hash, torrent_file_path):
             else:
                 print "Torrent (%s - %s) already removed" % (name, info_hash)
                 
+def main():
+    manager.run()
 
 if __name__ == '__main__':
-    manager.run()
+    main()

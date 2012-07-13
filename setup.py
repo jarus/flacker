@@ -16,6 +16,11 @@ setup(
     description='BitTorrent tracker written with Python and Flask',
     packages=['flacker'],
     zip_safe=False,
+    entry_points={
+        'console_scripts': [
+            'flacker = flacker.manage:main',
+        ],
+    },
     install_requires=[
         'Flask==0.9',
         'Flask-Script==0.3.3',
