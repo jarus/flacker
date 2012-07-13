@@ -70,7 +70,8 @@ def _read_torrent_file(torrent_file_path):
 
 manager = Manager(create_app)
 manager.add_option('-c', '--config', dest='config',
-                   help='config file for flacker')
+                   help='config file for flacker',
+                   required='FLACKER_CONFIG' not in os.environ)
 manager.add_command("shell", Shell(make_context=_make_context))
 manager.add_command("runserver", Server())
 
