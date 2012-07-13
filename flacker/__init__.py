@@ -9,15 +9,19 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import os
 import cgi
 from binascii import b2a_hex
 from socket import inet_aton
 from struct import pack
 
-from flask import Flask, request
+from flask import Flask, request, abort, send_file
 from flask.ext.redis import Redis
 
 from bencode import bencode
+
+def _get_torrent_key(info_hash):
+    return 'torrent:' + info_hash
 
 def get_info_hash(request, multiple=False):
     if not multiple:
@@ -49,9 +53,9 @@ def announce():
     peer_id = request.args['peer_id']
     peer_key = 'peer:%s' % peer_id
     info_hash = get_info_hash(request)
-    torrent_key = 'torrent:%s' % info_hash
-    seed_set_key = 'torrent:%s:seed' % info_hash
-    leech_set_key = 'torrent:%s:leech' % info_hash
+    torrent_key = _get_torrent_key(info_hash)
+    seed_set_key = torrent_key + ':seed'
+    leech_set_key = torrent_key + ':leech'
     
     if not redis.sismember('torrents', info_hash):
         return babort('torrent not allowed')
@@ -126,9 +130,9 @@ def scape():
     
     files = {}
     for info_hash in info_hash_list:
-        torrent_key = 'torrent:%s' % info_hash
-        seed_set_key = 'torrent:%s:seed' % info_hash
-        leech_set_key = 'torrent:%s:leech' % info_hash
+        torrent_key = _get_torrent_key(info_hash)
+        seed_set_key = torrent_key + ':seed'
+        leech_set_key = torrent_key + ':leech'
         
         name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
         files[info_hash] = {
@@ -139,3 +143,18 @@ def scape():
         }
         
     return bencode({'files': files})
+
+@app.route('/file')
+def torrent_file():
+    info_hash = request.args.get('info_hash')
+    torrent_file_path = os.path.join(app.instance_path, info_hash+'.torrent')
+    
+    if info_hash is None or not redis.sismember('torrents', info_hash) \
+    or not os.path.isfile(torrent_file_path):
+        abort(404)
+    
+    name = redis.hget(_get_torrent_key(info_hash), 'name') or info_hash
+    filename = name + '.torrent'
+    return send_file(app.open_instance_resource(info_hash+'.torrent'), 
+                     as_attachment=True, attachment_filename=filename)
+    
