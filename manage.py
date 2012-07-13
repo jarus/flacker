@@ -13,10 +13,11 @@ from bencode import bencode, bdecode
 from flask import current_app
 from flaskext.script import Manager, Server, Shell
 
-from flacker import app, redis
+from flacker import create_app
+from flacker.redis import redis
 
 def _make_context():
-    return dict(app=app, redis=redis)
+    return dict(app=current_app, redis=redis)
 
 def _exist_torrent(info_hash):
     return redis.sismember('torrents', info_hash)
@@ -66,7 +67,9 @@ def _read_torrent_file(torrent_file_path):
         info_hash = sha1(bencode(info_dict)).hexdigest()
     return info_hash, info_dict
 
-manager = Manager(app)
+manager = Manager(create_app)
+manager.add_option('-c', '--config', dest='config',
+                   help='config file for flacker')
 manager.add_command("shell", Shell(make_context=_make_context))
 manager.add_command("runserver", Server())
 
