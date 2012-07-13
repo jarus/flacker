@@ -70,7 +70,13 @@ def announce():
     elif request.args.get('event') == 'completed':
         redis.hincrby(torrent_key, 'downloaded', 1)
 
-    redis.hset(peer_key, 'ip', request.args.get('ip', request.remote_addr))
+    ip = request.args.get('ip', request.remote_addr)
+    try:
+        inet_aton(ip)
+    except Exception, e:
+        raise e
+
+    redis.hset(peer_key, 'ip', ip)
     redis.hset(peer_key, 'port', request.args.get('port', int))
     redis.hset(peer_key, 'uploaded', request.args['uploaded'])
     redis.hset(peer_key, 'downloaded', request.args['downloaded'])
