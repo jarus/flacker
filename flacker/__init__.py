@@ -24,6 +24,10 @@ def create_app(config=None):
     elif 'FLACKER_CONFIG' in os.environ:
         app.config.from_envvar('FLACKER_CONFIG')
     
+    if app.config.get('SENTRY_DSN'):
+        from raven.contrib.flask import Sentry
+        sentry = Sentry(app)
+    
     redis.init_app(app)
     app.register_blueprint(tracker)
     app.register_blueprint(frontend)
