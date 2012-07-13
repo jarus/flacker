@@ -11,8 +11,8 @@
 
 import os
 import cgi
+import socket
 from binascii import b2a_hex
-from socket import inet_aton
 from struct import pack
 
 from flask import Blueprint, request, abort, send_file
@@ -72,9 +72,10 @@ def announce():
 
     ip = request.args.get('ip', request.remote_addr)
     try:
-        inet_aton(ip)
-    except Exception, e:
-        raise e
+        socket.inet_pton(socket.AF_INET6, ip)
+        ip = request.remote_addr
+    except socket.error:
+        pass
 
     redis.hset(peer_key, 'ip', ip)
     redis.hset(peer_key, 'port', request.args.get('port', int))
@@ -110,7 +111,10 @@ def announce():
 
         peer_count += 1
         if request.args.get('compact', False, bool):
-            ip = inet_aton(ip)
+            try:
+                ip = socket.inet_pton(socket.AF_INET, ip)
+            except socket.error:
+                continue
             port = pack(">H", int(port))
             peers += (ip + port)
         else:
