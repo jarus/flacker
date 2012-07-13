@@ -15,6 +15,7 @@ from flaskext.script import Manager, Server, Shell
 
 from . import create_app
 from .redis import redis
+from .tracker import _get_torrent_key
 
 def _make_context():
     return dict(app=current_app, redis=redis)
@@ -126,7 +127,20 @@ def remove_torrent(info_hash, torrent_file_path):
                 print "Torrent (%s - %s) removed" % (name, info_hash) 
             else:
                 print "Torrent (%s - %s) already removed" % (name, info_hash)
-                
+
+@manager.command
+def stats():
+    for info_hash in redis.smembers('torrents'):
+        torrent_key = _get_torrent_key(info_hash)
+        seed_set_key = torrent_key + ':seed'
+        leech_set_key = torrent_key + ':leech'
+        
+        name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
+        print "%s (%s) - seed %s leech %s downloaded %s" % (name, info_hash, 
+              redis.scard(seed_set_key) or 0, redis.scard(leech_set_key) or 0, 
+              int(downloaded) or 0)
+
+     
 def main():
     manager.run()
 
