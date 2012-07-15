@@ -38,7 +38,6 @@
             <td>{{ info_hash }}</td>
             <td><strong>{{ torrent['name'] }}</strong></td>
             <td>
-              <span style="display:none;">{{ torrent['complete'] }}</span>
               {% if torrent['complete'] > 2 %}
               <span class="badge badge-success">{{ torrent['complete'] }}</span></td>
               {% else %}
@@ -46,14 +45,13 @@
               {% endif %}
             </td>
             <td>
-              <span style="display:none;">{{ torrent['incomplete'] }}</span>
               {% if torrent['complete'] > torrent['incomplete'] %}
               <span class="badge badge-success">{{ torrent['incomplete'] }}</span>
               {% else %}
               <span class="badge badge-warning">{{ torrent['incomplete'] }}</span>
               {% endif %}
             </td>
-            <td><span style="display:none;">{{ torrent['downloaded'] }}</span><span class="badge">{{ torrent['downloaded'] }}</span></td>
+            <td><span class="badge">{{ torrent['downloaded'] }}</span></td>
             <td><a class="btn btn-success" href="{{ url_for('tracker.torrent_file', info_hash=info_hash) }}"><i class="icon-download icon-white"></i> Download</a></tr>
           {% endfor %}
         </tbody>

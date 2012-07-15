@@ -9,7 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Blueprint, render_template, jsonify, url_for
+from flask import Blueprint, render_template
 
 from .tracker import get_torrent_list
 
