@@ -120,8 +120,8 @@ def announce():
         peer_key = 'peer:%s' % peer_id
         ip, port, left = redis.hmget(peer_key, 'ip', 'port', 'left')
         if (ip and port) is None:
-            redis.srem(seed_set_key, peer_key)
-            redis.srem(leech_set_key, peer_key)
+            redis.srem(seed_set_key, peer_id)
+            redis.srem(leech_set_key, peer_id)
             continue
         elif peer_count >= request.args.get('numwant', 50, int):
             continue
