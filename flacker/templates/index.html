@@ -68,6 +68,23 @@
     <script src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
     <script>
+      $.extend(jQuery.fn.dataTableExt.oSort, {
+          "num-html-pre": function ( a ) {
+              var x = a.replace( /<.*?>/g, "" );
+              return parseFloat( x );
+          },
+      
+          "num-html-asc": function ( a, b ) {
+              return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+          },
+      
+          "num-html-desc": function ( a, b ) {
+              return ((a < b) ? 1 : ((a > b) ? -1 : 0));
+          }
+      });
+      $.extend( $.fn.dataTableExt.oStdClasses, {
+          "sWrapper": "dataTables_wrapper form-inline"
+      } );
       $(document).ready(function() {
           $('#torrents').dataTable({
             "bPaginate": false,
@@ -76,11 +93,15 @@
             "aoColumnDefs": [ 
               { "bSortable": false, "aTargets": [5] }
             ],
+            "aoColumns": [
+              null,
+              null,
+              { "sType": "num-html" },
+              { "sType": "num-html" },
+              { "sType": "num-html" },
+            ]
           });
-      } );
-      $.extend( $.fn.dataTableExt.oStdClasses, {
-          "sWrapper": "dataTables_wrapper form-inline"
-      } );
+      });
     </script>
     
   </body>
