@@ -1,0 +1,81 @@
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <title>flacker - BitTorrent tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta http-equiv="refresh" content="30">
+
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/datatables_bootstrap.css') }}" rel="stylesheet">
+    
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Flacker <small>lightweight bittorrent tracker</small></h1>
+      </div>
+      
+      <table id="torrents" class="table table-striped">
+        <thead>
+          <tr>
+            <th>info hash</th>
+            <th>name</th>
+            <th>seeds</th>
+            <th>leechs</th>
+            <th>downloaded</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for info_hash,torrent in torrents.items() %}
+          <tr>
+            <td>{{ info_hash }}</td>
+            <td><strong>{{ torrent['name'] }}</strong></td>
+            {% if torrent['complete'] > 2 %}
+            <td><span class="badge badge-success">{{ torrent['complete'] }}</span></td>
+            {% else %}
+            <td><span class="badge badge-important">{{ torrent['complete'] }}</span></td>
+            {% endif %}
+            {%  if torrent['complete'] > torrent['incomplete'] %}
+            <td><span class="badge badge-success">{{ torrent['incomplete'] }}</span></td>
+            {% else %}
+            <td><span class="badge badge-warning">{{ torrent['incomplete'] }}</span></td>
+            {% endif %}
+            <td><span class="badge">{{ torrent['downloaded'] }}</span></td>
+            <td><a class="btn btn-success" href="{{ url_for('tracker.torrent_file', info_hash=info_hash) }}"><i class="icon-download icon-white"></i> Download</a></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      <hr>
+      <footer>
+        Flacker {{ flacker_version }} is <a href="https://github.com/jarus/flacker">Open Source Software</a> | Builded with <a href="http://python.org">Python</a> and <a href="http://flask.pocoo.org/">Flask</a>
+      </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+    <script>
+      $(document).ready(function() {
+          $('#torrents').dataTable({
+            "bPaginate": false,
+            "bInfo": false,
+            "bStateSave": true,
+            "aoColumnDefs": [ 
+              { "bSortable": false, "aTargets": [5] }
+            ],
+          });
+      } );
+      $.extend( $.fn.dataTableExt.oStdClasses, {
+          "sWrapper": "dataTables_wrapper form-inline"
+      } );
+    </script>
+    
+  </body>
+</html>

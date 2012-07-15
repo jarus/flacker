@@ -35,6 +35,25 @@ def get_info_hash(request, multiple=False):
             hashes.add(b2a_hex(hash))
         return hashes
 
+def get_torrent_list(info_hash_list=None):
+    if info_hash_list is None:
+        info_hash_list = redis.smembers('torrents')
+    
+    torrents = {}
+    for info_hash in info_hash_list:
+        torrent_key = _get_torrent_key(info_hash)
+        seed_set_key = torrent_key + ':seed'
+        leech_set_key = torrent_key + ':leech'
+    
+        name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
+        torrents[info_hash] = {
+            'name': name,
+            'downloaded': int(downloaded) or 0,
+            'complete': redis.scard(seed_set_key) or 0,
+            'incomplete': redis.scard(leech_set_key) or 0,
+        }
+    return torrents
+
 def babort(message):
     return bencode({
         'interval': announce_interval(),
@@ -132,29 +151,14 @@ def announce():
 
 @tracker.route('/scrape')
 def scape():
+    info_hash_list = None
     if 'info_hash' in request.args:
         info_hash_list = get_info_hash(request, multiple=True)
         for info_hash in info_hash_list:
             if not redis.sismember('torrents', info_hash):
                 info_hash_list.remove(info_hash)
-    else:
-        info_hash_list = redis.smembers('torrents')
-
-    files = {}
-    for info_hash in info_hash_list:
-        torrent_key = _get_torrent_key(info_hash)
-        seed_set_key = torrent_key + ':seed'
-        leech_set_key = torrent_key + ':leech'
-
-        name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
-        files[info_hash] = {
-            'name': name,
-            'downloaded': int(downloaded) or 0,
-            'complete': redis.scard(seed_set_key) or 0,
-            'incomplete': redis.scard(leech_set_key) or 0,
-        }
-
-    return bencode({'files': files})
+    
+    return bencode({'files': get_torrent_list(info_hash_list)})
 
 @tracker.route('/file')
 def torrent_file():

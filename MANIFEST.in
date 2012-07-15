@@ -1,0 +1,2 @@
+recursive-include flacker/templates *
+recursive-include flacker/static *

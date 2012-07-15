@@ -9,12 +9,11 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Blueprint
-from flask import current_app as app
+from flask import Blueprint, render_template, jsonify, url_for
 
-from .redis import redis
+from .tracker import get_torrent_list
 
 frontend = Blueprint("frontend", "flacker.frontend.frontend")
 @frontend.route('/')
 def index():
-    return 'Flacker - A BitTorrent tracker written in Python with Flask'
+    return render_template("index.html", torrents=get_torrent_list())
